@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(node -e \":*)",
+      "Bash(node --version)",
+      "Bash(npm test)",
+      "Bash(npm run test:integration)",
+      "Bash(node test/debug-two-clients.js)",
+      "Bash(npm install --save-dev aedes)",
+      "Bash(node -e \"const a = require\\(''aedes''\\); console.log\\(typeof a, Object.keys\\(a\\).slice\\(0,5\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''aedes/package.json''\\).version\\)\")",
+      "Bash(node -e \"const d=require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\); const p=JSON.parse\\(d\\); console.log\\(p.version, p.main\\);\")",
+      "Bash(node -e \"const d=require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\); const p=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(p.exports,null,2\\)\\);\")",
+      "Bash(npm install --save-dev aedes@0)",
+      "Bash(npm install --save-dev aedes@1)",
+      "Bash(npm run test:live)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
