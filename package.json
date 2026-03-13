@@ -1,0 +1,29 @@
+{
+  "name": "meshtastic-node-client",
+  "version": "1.0.0",
+  "description": "Meshtastic NodeJS client",
+  "license": "ISC",
+  "author": "Alberto Miranda",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "chat": "node chat.js",
+    "chat:json": "node chat.js --json",
+    "chat:echo": "node chat.js --echo",
+    "chat:json:echo": "node chat.js --json --echo",
+    "broker": "node broker.js",
+    "test": "node --test test/crypto.test.js test/protobufs.test.js test/client.test.js",
+    "test:integration": "node --test test/integration.test.js",
+    "test:live": "node --test test/integration-live.test.js",
+    "send:json": "node ./bin/send-json.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "mqtt": "^5.0.0",
+    "protobufjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "aedes": "^0.51.3"
+  }
+}
