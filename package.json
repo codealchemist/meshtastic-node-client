@@ -1,10 +1,14 @@
 {
   "name": "meshtastic-node-client",
   "version": "1.0.0",
-  "description": "Meshtastic NodeJS client",
+  "description": "Meshtastic NodeJS client with plugins support",
   "license": "ISC",
   "author": "Alberto Miranda",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codealchemist/meshtastic-node-client.git"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
