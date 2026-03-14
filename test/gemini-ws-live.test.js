@@ -12,7 +12,7 @@
 import 'dotenv/config'
 import { describe, it, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { GeminiLiveClient } from '../plugins/gemini.js'
+import { GeminiLiveClient } from '../../meshtastic-gemini-plugin/index.js'
 import { setLogWriter } from '../src/log.js'
 
 setLogWriter(line => process.stdout.write(line + '\n'))

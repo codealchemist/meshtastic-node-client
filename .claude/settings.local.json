@@ -26,7 +26,11 @@
       "Bash(curl -s \"https://generativelanguage.googleapis.com/v1alpha/models?key=$GEMINI_API_KEY\")",
       "Bash(node --import ./loader.js -e \":*)",
       "Bash(node --import ./loader.js --test test/gemini.test.js)",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(npm link)",
+      "Bash(npm link meshtastic-plugin-echo-external)",
+      "Bash(node bin/sync-plugins.js)",
+      "Bash(npm link meshtastic-plugin-gemini)"
     ]
   }
 }
