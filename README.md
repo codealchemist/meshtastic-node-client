@@ -60,18 +60,20 @@ All configuration is via environment variables in `.env`:
 
 ## npm scripts
 
-| Script                     | Description                                                         |
-| -------------------------- | ------------------------------------------------------------------- |
-| `npm start`                | Listen mode (headless); pass a message as argument to send it once  |
-| `npm run chat`             | Interactive chat shell (protobuf mode)                              |
-| `npm run chat:json`        | Interactive chat shell (JSON mode — uses `/2/json/` topic)          |
-| `npm run chat:echo`        | Chat shell with echo plugin enabled                                 |
-| `npm run chat:json:echo`   | JSON mode + echo plugin                                             |
-| `npm run broker`           | Start a local Aedes MQTT broker (reads config from `.env`)          |
-| `npm test`                 | Run unit tests                                                      |
-| `npm run test:integration` | Run integration tests (requires local broker)                       |
-| `npm run test:live`        | Run live tests against a real broker                                |
-| `npm run send:json`        | Send a one-shot JSON message via `bin/send-json.js`                 |
+| Script                       | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `npm start`                  | Listen mode (headless); pass a message as argument to send it once  |
+| `npm run chat`               | Interactive chat shell (protobuf mode)                              |
+| `npm run chat:json`          | Interactive chat shell (JSON mode — uses `/2/json/` topic)          |
+| `npm run chat:echo`          | Chat shell with echo plugin enabled                                 |
+| `npm run chat:ai`            | Chat shell with Gemini AI plugin enabled                            |
+| `npm run chat:json:echo`     | JSON mode + echo plugin                                             |
+| `npm run broker`             | Start a local Aedes MQTT broker (reads config from `.env`)          |
+| `npm test`                   | Run all unit tests                                                  |
+| `npm run test:integration`   | Integration tests against an in-process Aedes broker                |
+| `npm run test:live`          | Live tests against a real broker (mqtt.meshtastic.org)              |
+| `npm run test:gemini-ws`     | Live WebSocket test against the Gemini Live API (needs API key)     |
+| `npm run send:json`          | Send a one-shot JSON message via `bin/send-json.js`                 |
 
 ### Local broker
 
