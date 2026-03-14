@@ -6,7 +6,7 @@
  *
  * Run with: npm run test:gemini-ws
  *
- * Only models that support bidiGenerateContent are compatible (e.g. gemini-2.5-flash-native-audio).
+ * Only models that support bidiGenerateContent are compatible (e.g. gemini-2.5-flash-native-audio-latest).
  * Override the model with GEMINI_LIVE_MODEL env var.
  */
 import 'dotenv/config'
@@ -24,6 +24,22 @@ const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-2.5-flash-native-aud
 
 const SKIP = !API_KEY ? 'GEMINI_API_KEY not set — skipping live WS test' : false
 
+function makeClient() {
+  return new GeminiLiveClient({
+    apiKey: API_KEY,
+    setup: {
+      model: `models/${LIVE_MODEL}`,
+      systemInstruction: {
+        parts: [{ text: 'Be concise. Reply in plain text only. Keep responses short.' }]
+      },
+      generationConfig: {
+        responseModalities: ['AUDIO'],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
+      }
+    }
+  })
+}
+
 describe('Gemini Live API — real WebSocket connection', { timeout: 30000, skip: SKIP }, () => {
   let client
 
@@ -33,15 +49,7 @@ describe('Gemini Live API — real WebSocket connection', { timeout: 30000, skip
   })
 
   it('connects and receives setupComplete from the Live API', async () => {
-    client = new GeminiLiveClient({
-      apiKey: API_KEY,
-      model: LIVE_MODEL,
-      generationConfig: {
-        responseModalities: ['AUDIO'],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
-      }
-    })
-
+    client = makeClient()
     await assert.doesNotReject(client.connect(), 'connect() should resolve without error')
     assert.ok(client.isOpen(), 'client should report open after connect')
   })
@@ -49,14 +57,7 @@ describe('Gemini Live API — real WebSocket connection', { timeout: 30000, skip
   it('generates a text reply to a simple query', async () => {
     // Reuse the already-connected client from the previous test
     if (!client?.isOpen()) {
-      client = new GeminiLiveClient({
-        apiKey: API_KEY,
-        model: LIVE_MODEL,
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
-        }
-      })
+      client = makeClient()
       await client.connect()
     }
 

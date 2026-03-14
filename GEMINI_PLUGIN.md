@@ -50,7 +50,7 @@ CHAT_ENABLED_PLUGINS=gemini
 | `gemini-2.0-flash`               | HTTP      | fast   | good    | Default, free tier available        |
 | `gemini-2.0-flash-lite`          | HTTP      | faster | lighter | Lower cost / higher quota           |
 | `gemini-2.5-pro`                 | HTTP      | slower | best    | Paid tier                           |
-| `gemini-2.5-flash-native-audio`  | WS        | fast   | —       | Requires `GEMINI_USE_WS=1`          |
+| `gemini-2.5-flash-native-audio-latest` | WS   | fast   | —       | Requires `GEMINI_USE_WS=1`          |
 
 ## Transport modes
 
@@ -62,13 +62,15 @@ Works with all standard text models.
 ### WebSocket (Live API)
 
 Set `GEMINI_USE_WS=1` to use the Gemini Live API over a persistent WebSocket
-connection. Required for models like `gemini-2.5-flash-native-audio` that only
-support the Live API. The connection is established on the first query and
+connection. Required for models like `gemini-2.5-flash-native-audio-latest` that
+only support the Live API. The connection is established at plugin load and
 reconnected automatically if it drops.
+
+Google Search grounding is enabled automatically in WS mode.
 
 ```env
 GEMINI_USE_WS=1
-GEMINI_MODEL=gemini-2.5-flash-native-audio
+GEMINI_MODEL=gemini-2.5-flash-native-audio-latest
 ```
 
 Requires Node.js 22+ (built-in `WebSocket` global).

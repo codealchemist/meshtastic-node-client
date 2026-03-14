@@ -11,7 +11,6 @@
 
 import { createLogger } from '../src/log.js'
 import { magenta } from '../src/color.js'
-import { config } from 'dotenv'
 
 const log = createLogger('gemini', magenta)
 
@@ -290,7 +289,7 @@ export default function createGeminiPlugin(_opts = {}) {
               system_instruction: {
                 parts: [
                   {
-                    text: `${SYSTEM_INSTRUCTION} Keep your total response under ${maxLen} characters.`
+                    text: SYSTEM_INSTRUCTION.replace(/\n/g, ' ').trim()
                   }
                 ]
               },
