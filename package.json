@@ -11,15 +11,17 @@
   },
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "chat": "node chat.js",
-    "chat:json": "node chat.js --json",
-    "chat:echo": "node chat.js --echo",
-    "chat:json:echo": "node chat.js --json --echo",
+    "start": "node --import ./loader.js index.js --listen",
+    "chat": "node --import ./loader.js index.js",
+    "chat:json": "node --import ./loader.js index.js --json",
+    "chat:echo": "node --import ./loader.js index.js --plugins=echo",
+    "chat:ai": "node --import ./loader.js index.js --plugins=gemini",
+    "chat:json:echo": "node --import ./loader.js index.js --json --plugins=echo",
     "broker": "node broker.js",
-    "test": "node --test test/crypto.test.js test/protobufs.test.js test/client.test.js",
+    "test": "node --import ./loader.js --test test/crypto.test.js test/protobufs.test.js test/client.test.js test/color.test.js test/log.test.js test/echo.test.js test/gemini.test.js",
     "test:integration": "node --test test/integration.test.js",
     "test:live": "node --test test/integration-live.test.js",
+    "test:gemini-ws": "node --import ./loader.js --test test/gemini-ws-live.test.js",
     "send:json": "node ./bin/send-json.js"
   },
   "dependencies": {

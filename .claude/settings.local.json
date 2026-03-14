@@ -16,7 +16,17 @@
       "Bash(npm install --save-dev aedes@1)",
       "Bash(npm run test:live)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(ls ./*.md)",
+      "Bash(ls ./README*)",
+      "Bash(npm run test:gemini-ws)",
+      "Bash(source ./.env)",
+      "Bash(curl -s \"https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(m[''name'']\\) for m in data.get\\(''models'',[]\\) if ''bidiGenerateContent'' in m.get\\(''supportedGenerationMethods'',[]\\)]\")",
+      "Bash(curl -s \"https://generativelanguage.googleapis.com/v1alpha/models?key=$GEMINI_API_KEY\")",
+      "Bash(node --import ./loader.js -e \":*)",
+      "Bash(node --import ./loader.js --test test/gemini.test.js)",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }

@@ -8,6 +8,10 @@ import {
   User,
   PortNum
 } from './protobufs.js'
+import { createLogger } from './log.js'
+import { cyan } from './color.js'
+
+const log = createLogger('meshtastic', cyan)
 
 const BROADCAST_ADDR = 0xffffffff
 const DEFAULT_HOP_LIMIT = 3
@@ -120,13 +124,11 @@ export default class MeshtasticClient {
       if (this.mqttUsername) mqttOpts.username = this.mqttUsername
       if (this.mqttPassword) mqttOpts.password = this.mqttPassword
 
-      console.log(
-        `[meshtastic] connecting to ${this.mqttBroker} as ${this.gatewayId}…`
-      )
+      log(`connecting to ${this.mqttBroker} as ${this.gatewayId}…`)
       this._mqttClient = mqtt.connect(this.mqttBroker, mqttOpts)
 
       this._mqttClient.once('connect', async () => {
-        console.log(`[meshtastic] connected`)
+        log(`connected`)
 
         // Wait for subscribe to confirm before announcing
         await new Promise((res, rej) => {
@@ -136,8 +138,8 @@ export default class MeshtasticClient {
           )
         }).catch(reject)
 
-        console.log(`[meshtastic] subscribed to ${this._subscribeTopic}`)
-        console.log(`[meshtastic] subscribed to ${this._jsonSubscribeTopic}`)
+        log(`subscribed to ${this._subscribeTopic}`)
+        log(`subscribed to ${this._jsonSubscribeTopic}`)
         this._mqttClient.on('message', (topic, payload) => {
           if (topic.includes('/2/json/')) {
             this._handleJsonMessage(topic, payload)
@@ -148,13 +150,13 @@ export default class MeshtasticClient {
 
         // Persistent error / disconnect logging
         this._mqttClient.on('error', err =>
-          console.error('[meshtastic] MQTT error:', err.message)
+          log.error('MQTT error:', err.message)
         )
         this._mqttClient.on('offline', () =>
-          console.warn('[meshtastic] broker offline / connection lost')
+          log.warn('broker offline / connection lost')
         )
         this._mqttClient.on('reconnect', () =>
-          console.log('[meshtastic] reconnecting…')
+          log('reconnecting…')
         )
 
         await this.announce()
@@ -196,9 +198,7 @@ export default class MeshtasticClient {
     await this._sendData(PortNum.NODEINFO_APP, Buffer.from(userBytes), {
       wantResponse: true
     })
-    console.log(
-      `[meshtastic] announced as ${this.gatewayId} long="${this.nodeLongName}" short="${this.nodeShortName}" hw_model=${this.hwModel}`
-    )
+    log(`announced as ${this.gatewayId} long="${this.nodeLongName}" short="${this.nodeShortName}" hw_model=${this.hwModel}`)
   }
 
   /**

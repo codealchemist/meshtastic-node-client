@@ -14,9 +14,9 @@ Phone app ←BLE→ Heltec ←RF→ mesh ←MQTT→ [broker] ←MQTT→ this cli
 To start playing with this you'll need at least 2 Meshtastic nodes.
 Node 1 connected to your local network, where you run this client.
 Node 2 connected to your phone.
-You can then use your phone to send messages using LoRa between the 2 Meshtastic nodes and let this client work its magic by creating useful plugins that are triggered by incomming messages or send messages based on other triggers.
+You can then use your phone to send messages using LoRa between the 2 Meshtastic nodes and let this client work its magic by creating useful plugins that are triggered by incoming messages or send messages based on other triggers.
 
-Think of this client as a Lego plate were you can build Meshtastic features.
+Think of this client as a Lego plate where you can build Meshtastic features.
 
 ## Requirements
 
@@ -60,18 +60,20 @@ All configuration is via environment variables in `.env`:
 
 ## npm scripts
 
-| Script                     | Description                                                         |
-| -------------------------- | ------------------------------------------------------------------- |
-| `npm start`                | Start in listen mode; pass a message as an argument to send it once |
-| `npm run chat`             | Interactive chat shell (protobuf mode)                              |
-| `npm run chat:json`        | Interactive chat shell (JSON mode — uses `/2/json/` topic)          |
-| `npm run chat:echo`        | Chat shell with echo plugin enabled                                 |
-| `npm run chat:json:echo`   | JSON mode + echo plugin                                             |
-| `npm run broker`           | Start a local Aedes MQTT broker (reads config from `.env`)          |
-| `npm test`                 | Run unit tests                                                      |
-| `npm run test:integration` | Run integration tests (requires local broker)                       |
-| `npm run test:live`        | Run live tests against a real broker                                |
-| `npm run send:json`        | Send a one-shot JSON message via `bin/send-json.js`                 |
+| Script                       | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `npm start`                  | Listen mode (headless); pass a message as argument to send it once  |
+| `npm run chat`               | Interactive chat shell (protobuf mode)                              |
+| `npm run chat:json`          | Interactive chat shell (JSON mode — uses `/2/json/` topic)          |
+| `npm run chat:echo`          | Chat shell with echo plugin enabled                                 |
+| `npm run chat:ai`            | Chat shell with Gemini AI plugin enabled                            |
+| `npm run chat:json:echo`     | JSON mode + echo plugin                                             |
+| `npm run broker`             | Start a local Aedes MQTT broker (reads config from `.env`)          |
+| `npm test`                   | Run all unit tests                                                  |
+| `npm run test:integration`   | Integration tests against an in-process Aedes broker                |
+| `npm run test:live`          | Live tests against a real broker (mqtt.meshtastic.org)              |
+| `npm run test:gemini-ws`     | Live WebSocket test against the Gemini Live API (needs API key)     |
+| `npm run send:json`          | Send a one-shot JSON message via `bin/send-json.js`                 |
 
 ### Local broker
 
@@ -86,7 +88,7 @@ npm run broker
 ### Sending a one-off message
 
 ```bash
-node index.js "Hello mesh"
+node --import ./loader.js index.js "Hello mesh"
 ```
 
 ## Chat modes
@@ -102,25 +104,49 @@ A `✓` confirmation is printed when the gateway device ACKs a sent message.
 
 ## Plugins
 
-Plugins live in `./plugins/*.js` and are loaded automatically by `chat.js` at
-startup. Each plugin file must default-export a factory function:
+Plugins live in `./plugins/*.js` and are loaded automatically at startup.
+A plugin is enabled via the `--plugins=` flag or the `CHAT_ENABLED_PLUGINS` env var.
+
+```bash
+# enable one plugin
+npm run chat -- --plugins=echo
+
+# enable multiple plugins
+node --import ./loader.js index.js --plugins=echo,gemini
+```
+
+```env
+# .env — always enable certain plugins
+CHAT_ENABLED_PLUGINS=echo,gemini
+```
+
+### Writing a plugin
+
+Each plugin file must default-export a factory function and export a `metadata`
+object with at least a `name` field (used for enablement checks):
 
 ```js
 // plugins/my-plugin.js
 export default function createMyPlugin(opts = {}) {
-  // opts.echoMode   — true when --echo flag is set
   // opts.sendJsonMode — true when --json flag is set
 
   return {
     name: 'my-plugin', // shown in startup log
     onMessage: async ({ event, client, sendJsonMode }) => {
-      // event — decoded incoming message (see event shape below)
+      // event  — decoded incoming message (see event shape below)
       // client — MeshtasticClient instance (call client.sendText / client.sendJson)
-      // sendJsonMode — true if the chat was started in JSON mode
     }
   }
 }
+
+export const metadata = {
+  name: 'my-plugin',
+  description: 'What this plugin does.'
+}
 ```
+
+Plugins can import from `src/` using bare specifiers (e.g. `import { createLogger } from 'src/log.js'`)
+thanks to the ESM resolution hook loaded via `--import ./loader.js`.
 
 ### Event shape
 
@@ -144,36 +170,42 @@ export default function createMyPlugin(opts = {}) {
 }
 ```
 
-### Example: echo plugin
+### Bundled plugins
 
-The bundled `plugins/echo.js` echoes every received message back to the channel,
-prefixed with `ECHO:`. It only activates when `--echo` is passed (or
-`CHAT_ECHO=1` is set):
+| Plugin    | Description                                                    | Enable with          |
+| --------- | -------------------------------------------------------------- | -------------------- |
+| `echo`    | Echoes every received message back with an `ECHO:` prefix      | `--plugins=echo`     |
+| `gemini`  | Sends trigger messages to Google Gemini and replies to channel | `--plugins=gemini`   |
+
+See [GEMINI_PLUGIN.md](GEMINI_PLUGIN.md) for Gemini plugin setup and options.
+
+### Disabling a plugin temporarily
+
+Remove or rename the file so the loader skips it:
 
 ```bash
-npm run chat:echo
+mv plugins/echo.js plugins/echo.js.disabled
 ```
 
-### Enabling / disabling plugins
-
-- **Enable a plugin:** place its `.js` file in `./plugins/`
-- **Disable a plugin:** remove or rename the file (e.g. `echo.js.disabled`)
-- Plugins that throw on load are skipped with a warning; they do not crash the
-  chat shell
+Plugins that throw on load are skipped with a warning and do not crash the shell.
 
 ## Project structure
 
 ```
-index.js          — CLI entry point (connect, announce, optional send)
-chat.js           — Interactive chat shell with plugin support
+index.js          — CLI entry point (listen mode + interactive chat)
 broker.js         — Local Aedes MQTT broker
+loader.js         — Registers ESM resolution hook (--import ./loader.js)
+hooks.js          — ESM hook: maps 'src/...' to project src/ directory
 bin/send-json.js  — One-shot JSON message sender
 src/
   client.js       — MeshtasticClient class
   crypto.js       — AES-CTR encrypt/decrypt, PSK expansion, channel hash
   protobufs.js    — Inline protobufjs schema (no .proto files needed)
+  color.js        — ANSI terminal color helpers
+  log.js          — createLogger factory for coloured prefix logging
 plugins/
-  echo.js         — Example echo plugin
+  echo.js         — Echo plugin (reflects messages back to channel)
+  gemini.js       — Gemini AI plugin
 test/             — Unit and integration tests
 .env.example      — Configuration template
 ```
