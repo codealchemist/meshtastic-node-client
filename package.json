@@ -11,6 +11,8 @@
   },
   "main": "index.js",
   "scripts": {
+    "postinstall": "node bin/sync-plugins.js",
+    "postuninstall": "node bin/sync-plugins.js",
     "start": "node --import ./loader.js index.js --listen",
     "chat": "node --import ./loader.js index.js",
     "chat:json": "node --import ./loader.js index.js --json",
@@ -18,18 +20,18 @@
     "chat:ai": "node --import ./loader.js index.js --plugins=gemini",
     "chat:json:echo": "node --import ./loader.js index.js --json --plugins=echo",
     "broker": "node broker.js",
-    "test": "node --import ./loader.js --test test/crypto.test.js test/protobufs.test.js test/client.test.js test/color.test.js test/log.test.js test/echo.test.js test/gemini.test.js",
+    "test": "node --import ./loader.js --test test/crypto.test.js test/protobufs.test.js test/client.test.js test/color.test.js test/log.test.js test/echo.test.js test/gemini.test.js test/sync-plugins.test.js test/plugin-hooks.test.js",
     "test:integration": "node --test test/integration.test.js",
     "test:live": "node --test test/integration-live.test.js",
     "test:gemini-ws": "node --import ./loader.js --test test/gemini-ws-live.test.js",
+    "plugins:sync": "node bin/sync-plugins.js",
     "send:json": "node ./bin/send-json.js"
   },
   "dependencies": {
+    "@meshtastic-node-client/meshtastic-gemini-plugin": "^1.0.0",
+    "aedes": "^0.51.3",
     "dotenv": "^16.0.0",
     "mqtt": "^5.0.0",
     "protobufjs": "^7.0.0"
-  },
-  "devDependencies": {
-    "aedes": "^0.51.3"
   }
 }

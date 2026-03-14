@@ -1,6 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import createGeminiPlugin, { metadata, splitMessage } from '../plugins/gemini.js'
+import createGeminiPlugin, { metadata, splitMessage } from '../../meshtastic-gemini-plugin/index.js'
 import { setLogWriter } from '../src/log.js'
 
 // Suppress plugin log output during tests
@@ -388,6 +388,29 @@ describe('gemini plugin — WebSocket path', () => {
     const client = { sendJson: async t => sent.push(t) }
 
     await plugin.onMessage({ event: { text: 'G, hello' }, client, sendJsonMode: true })
+    assert.equal(sent.length, 1)
+    assert.equal(sent[0], 'reply:hello')
+  })
+
+  it('onEnd closes the WebSocket connection', async () => {
+    const plugin = createGeminiPlugin()
+    const client = { sendText: async () => {} }
+
+    // Trigger a connection so liveClient.ws is set
+    await plugin.onMessage({ event: { text: 'G, hello' }, client, sendJsonMode: false })
+    assert.equal(createdSockets.length, 1)
+    assert.equal(createdSockets[0].readyState, 1, 'socket should be open')
+
+    await plugin.onEnd()
+    assert.equal(createdSockets[0].readyState, 3, 'socket should be closed after onEnd')
+  })
+
+  it('onConsoleInput forwards text with trigger prefix to onMessage', async () => {
+    const plugin = createGeminiPlugin()
+    const sent = []
+    const client = { sendText: async t => sent.push(t) }
+
+    await plugin.onConsoleInput({ text: 'hello', client, sendJsonMode: false })
     assert.equal(sent.length, 1)
     assert.equal(sent[0], 'reply:hello')
   })

@@ -95,3 +95,20 @@ describe('echo plugin — onMessage', () => {
     assert.equal(plugin.name, 'echo')
   })
 })
+
+describe('echo plugin — lifecycle hooks', () => {
+  it('onStart resolves without error', async () => {
+    const plugin = createEchoPlugin()
+    await assert.doesNotReject(plugin.onStart())
+  })
+
+  it('onEnd resolves without error', async () => {
+    const plugin = createEchoPlugin()
+    await assert.doesNotReject(plugin.onEnd())
+  })
+
+  it('onConsoleInput resolves without error', async () => {
+    const plugin = createEchoPlugin()
+    await assert.doesNotReject(plugin.onConsoleInput({ text: 'hi', client: {}, sendJsonMode: false }))
+  })
+})

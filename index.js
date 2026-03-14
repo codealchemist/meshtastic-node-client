@@ -5,6 +5,8 @@ import readline from 'node:readline'
 import MeshtasticClient from './src/client.js'
 import { dim, green, yellow } from './src/color.js'
 import { createLogger, setLogWriter } from './src/log.js'
+import { dispatchHook } from './src/plugins.js'
+import { syncRegistry } from './bin/sync-plugins.js'
 
 const log = createLogger('chat', green)
 
@@ -46,6 +48,19 @@ function isPluginEnabled(name) {
   return enabledPlugins.includes(name)
 }
 
+/**
+ * Load plugins.json from the project root.
+ * Returns { plugins: [] } when the file is missing or unparseable.
+ */
+function loadPluginsRegistry() {
+  const registryPath = new URL('./plugins.json', import.meta.url).pathname
+  try {
+    return JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+  } catch {
+    return { plugins: [] }
+  }
+}
+
 async function main() {
   const nodeIdHex = requiredEnv('NODE_ID')
   const nodeId = parseInt(nodeIdHex, 16)
@@ -80,8 +95,18 @@ async function main() {
 
   await client.connect()
 
-  // Load plugins from ./plugins/*.js
+  // ── Sync external plugin registry ────────────────────────────────────────
+  // Prunes stale entries (packages removed since last npm install).
+  try {
+    syncRegistry()
+  } catch (err) {
+    log.warn('plugin registry sync failed:', err?.message ?? err)
+  }
+
+  // ── Load plugins ──────────────────────────────────────────────────────────
   const plugins = []
+
+  // 1. Built-in plugins (./plugins/*.js)
   const pluginsDir = new URL('./plugins/', import.meta.url)
   if (fs.existsSync(pluginsDir.pathname)) {
     for (const file of fs.readdirSync(pluginsDir.pathname)) {
@@ -90,10 +115,7 @@ async function main() {
         const mod = await import(
           new URL(path.posix.join('./plugins', file), import.meta.url).href
         )
-
-        // Get plugin metadata to check if it's enabled, then create plugin instance
         const metadata = mod.metadata ?? {}
-
         const factory = mod.default ?? mod
         const enabled = isPluginEnabled(metadata?.name)
         if (!enabled) {
@@ -109,8 +131,32 @@ async function main() {
     }
   }
 
-  const enabled = plugins.map(p => p?.name ?? '<unnamed>').filter(Boolean)
-  if (enabled.length > 0) log(`plugins enabled: ${enabled.join(', ')}`)
+  // 2. External plugins from plugins.json registry
+  const registry = loadPluginsRegistry()
+  for (const entry of registry.plugins) {
+    // registry enabled:true OR explicit env/CLI override both load the plugin
+    if (!entry.enabled && !isPluginEnabled(entry.name)) {
+      log(`external plugin "${entry.name}" (${entry.package}) is disabled, skipping`)
+      continue
+    }
+    try {
+      const mod = await import(entry.package)
+      const metadata = mod.metadata ?? {}
+      const factory = mod.default ?? mod
+      const plugin =
+        typeof factory === 'function' ? factory({ sendJsonMode }) : factory
+      plugins.push(plugin)
+      log(`external plugin loaded: ${metadata?.name ?? entry.name} (${entry.package})`)
+    } catch (err) {
+      log.error('external plugin load failed:', entry.package, err?.message ?? err)
+    }
+  }
+
+  const enabledNames = plugins.map(p => p?.name ?? '<unnamed>').filter(Boolean)
+  if (enabledNames.length > 0) log(`plugins enabled: ${enabledNames.join(', ')}`)
+
+  // ── onStart lifecycle ─────────────────────────────────────────────────────
+  await dispatchHook(plugins, 'onStart', { client, sendJsonMode }, { log })
 
   // ── readline setup (interactive mode only) ──────────────────────────────
   let rl = null
@@ -124,6 +170,17 @@ async function main() {
     } else {
       console.log(line)
     }
+  }
+
+  // Shared shutdown: call onEnd on all plugins, then disconnect
+  let closing = false
+  const shutdown = async () => {
+    if (closing) return
+    closing = true
+    log('\ndisconnecting…')
+    await dispatchHook(plugins, 'onEnd', { client }, { log })
+    await client.disconnect()
+    process.exit(0)
   }
 
   if (!listenMode) {
@@ -161,30 +218,19 @@ async function main() {
         } catch (err) {
           log.error(err.message)
         }
+
+        // Forward console input to plugins when PLUGIN_FORWARD_CONSOLE=1
+        if (process.env.PLUGIN_FORWARD_CONSOLE === '1') {
+          dispatchHook(plugins, 'onConsoleInput', { text: line, client, sendJsonMode }, { fireAndForget: true })
+        }
       }
       rl.prompt()
     })
 
-    let closing = false
-    const shutdown = async () => {
-      if (closing) return
-      closing = true
-      log('\ndisconnecting…')
-      await client.disconnect()
-      process.exit(0)
-    }
-
     rl.on('close', shutdown)
     process.on('SIGINT', () => rl.close())
   } else {
-    let closing = false
-    process.on('SIGINT', async () => {
-      if (closing) return
-      closing = true
-      log('\ndisconnecting…')
-      await client.disconnect()
-      process.exit(0)
-    })
+    process.on('SIGINT', shutdown)
     log('listening… (Ctrl-C to exit)')
   }
 

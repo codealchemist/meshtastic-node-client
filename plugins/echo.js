@@ -10,6 +10,7 @@ const log = createLogger('echo', cyan)
 export default function createEchoPlugin() {
   return {
     name: 'echo',
+
     onMessage: async ({ event, client, sendJsonMode }) => {
       if (event.text === undefined) return
       if (typeof event.text === 'string' && event.text.startsWith('ECHO:'))
@@ -23,6 +24,18 @@ export default function createEchoPlugin() {
       } catch {
         // ignore send errors from plugin
       }
+    },
+
+    onStart: async () => {
+      log('started')
+    },
+
+    onEnd: async () => {
+      log('stopped')
+    },
+
+    onConsoleInput: async () => {
+      // Console input is already visible to the user — no-op by default.
     }
   }
 }
