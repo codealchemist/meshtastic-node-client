@@ -24,25 +24,54 @@ free API key. No billing is required for the free tier.
 GEMINI_API_KEY=your_api_key_here
 ```
 
-The plugin loads automatically on the next `npm run chat` start.
+### 3. Enable the plugin
+
+```bash
+npm run chat -- --plugins=gemini
+# or add to .env:
+CHAT_ENABLED_PLUGINS=gemini
+```
 
 ## Environment variables
 
-| Variable              | Required | Default            | Description                                                  |
-|-----------------------|----------|--------------------|--------------------------------------------------------------|
-| `GEMINI_API_KEY`      | yes      | —                  | Google AI Studio API key                                     |
-| `GEMINI_TRIGGER_TEXT` | no       | `G, `              | Prefix that activates the plugin                             |
-| `GEMINI_MODEL`        | no       | `gemini-2.0-flash` | Gemini model to use                                          |
-| `GEMINI_MAX_LENGTH`   | no       | `600`              | Total response budget in characters                          |
-| `GEMINI_CHUNK_SIZE`   | no       | `200`              | Max chars per message; longer replies are split into chunks  |
+| Variable              | Required | Default            | Description                                                             |
+|-----------------------|----------|--------------------|-------------------------------------------------------------------------|
+| `GEMINI_API_KEY`      | yes      | —                  | Google AI Studio API key                                                |
+| `GEMINI_TRIGGER_TEXT` | no       | `G, `              | Prefix that activates the plugin                                        |
+| `GEMINI_MODEL`        | no       | `gemini-2.0-flash` | Gemini model to use                                                     |
+| `GEMINI_MAX_LENGTH`   | no       | `600`              | Total response budget in characters                                     |
+| `GEMINI_CHUNK_SIZE`   | no       | `200`              | Max chars per message; longer replies are split into chunks             |
+| `GEMINI_USE_WS`       | no       | `0`                | Set to `1` to use a persistent WebSocket connection (Live API)          |
 
 ### Choosing a model
 
-| Model                  | Speed  | Quality | Notes                        |
-|------------------------|--------|---------|------------------------------|
-| `gemini-2.0-flash`     | fast   | good    | Default, free tier available |
-| `gemini-2.0-flash-lite`| faster | lighter | Lower cost / higher quota    |
-| `gemini-2.5-pro`       | slower | best    | Paid tier                    |
+| Model                            | Transport | Speed  | Quality | Notes                               |
+|----------------------------------|-----------|--------|---------|-------------------------------------|
+| `gemini-2.0-flash`               | HTTP      | fast   | good    | Default, free tier available        |
+| `gemini-2.0-flash-lite`          | HTTP      | faster | lighter | Lower cost / higher quota           |
+| `gemini-2.5-pro`                 | HTTP      | slower | best    | Paid tier                           |
+| `gemini-2.5-flash-native-audio`  | WS        | fast   | —       | Requires `GEMINI_USE_WS=1`          |
+
+## Transport modes
+
+### HTTP (default)
+
+Each query opens a new HTTPS request to the Gemini `generateContent` endpoint.
+Works with all standard text models.
+
+### WebSocket (Live API)
+
+Set `GEMINI_USE_WS=1` to use the Gemini Live API over a persistent WebSocket
+connection. Required for models like `gemini-2.5-flash-native-audio` that only
+support the Live API. The connection is established on the first query and
+reconnected automatically if it drops.
+
+```env
+GEMINI_USE_WS=1
+GEMINI_MODEL=gemini-2.5-flash-native-audio
+```
+
+Requires Node.js 22+ (built-in `WebSocket` global).
 
 ## Message length and splitting
 
@@ -54,8 +83,8 @@ Splitting is word-boundary-aware: each chunk ends after the last whole word that
 fits, followed by a `…` suffix. The final chunk has no suffix.
 
 `GEMINI_MAX_LENGTH` (default `600`) caps the total response before splitting.
-Gemini is also instructed via a system prompt to keep its reply under this limit,
-so most responses arrive already concise.
+Gemini is also instructed via a system prompt to keep its reply concise and
+under this limit.
 
 ```
 # Example: 450-char reply → 3 messages
